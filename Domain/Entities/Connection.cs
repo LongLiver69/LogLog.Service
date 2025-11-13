@@ -1,13 +1,27 @@
-﻿namespace LogLog.Service.Domain.Entities
+﻿using MongoDB.Bson.Serialization.Attributes;
+using MongoDB.Bson;
+
+namespace LogLog.Service.Domain.Entities
 {
     public class Connection
     {
-        public int Id { get; set; }
+        [BsonId]
+        [BsonRepresentation(BsonType.ObjectId)]
+        public string? Id { get; set; }
 
-        public int UserId { get; set; }
+        [BsonElement("signalr_id")]
+        public string SignalrId { get; set; } = null!;
 
-        public required string SignalrId { get; set; }
+        [BsonElement("user_id")]
+        public string UserId { get; set; } = null!;
 
-        public DateTime? Timestamp { get; set; }
+        [BsonElement("user_fullname")]
+        public string UserFullname { get; set; } = null!;
+
+        [BsonElement("created_at")]
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+        [BsonElement("updated_at")]
+        public DateTime? UpdatedAt { get; set; }
     }
 }

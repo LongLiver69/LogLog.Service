@@ -1,50 +1,83 @@
 ﻿using Microsoft.AspNetCore.SignalR;
-using LogLog.Service.Domain.Models;
-using LogLog.Service.Domain;
+using LogLog.Service.Domain.Entities;
+using LogLog.Service.Configurations;
+using MongoDB.Driver;
 
 namespace LogLog.Service.HubConfig
 {
     public class MyHub : Hub
     {
-        private readonly DatabaseContext _context;
+        private readonly MongoDbService _db;
 
-        public MyHub(DatabaseContext context)
+        public MyHub(MongoDbService db)
         {
-            _context = context;
+            _db = db;
         }
 
-        public override Task OnDisconnectedAsync(Exception? exception)
+        public override async Task OnDisconnectedAsync(Exception? exception)
         {
-            int currUserId = _context.Connections.Where(c => c.SignalrId == Context.ConnectionId).Select(c => c.UserId).SingleOrDefault();
-            _context.Connections.RemoveRange(_context.Connections.Where(p => p.UserId == currUserId).ToList());
-            _context.SaveChanges();
-            Clients.Others.SendAsync("userOff", currUserId);
+            try
+            {
+                var connection = await _db.Connections
+                    .Find(c => c.SignalrId == Context.ConnectionId)
+                    .FirstOrDefaultAsync();
 
-            return base.OnDisconnectedAsync(exception);
+                if (connection != null)
+                {
+                    var userId = connection.UserId;
+                    await _db.Connections.DeleteManyAsync(c => c.UserId == userId);
+                    await Clients.Others.SendAsync("userOff", userId);
+                }
+            }
+            catch (Exception ex)
+            {
+                // Optionally log exception
+            }
+
+            await base.OnDisconnectedAsync(exception);
         }
 
-        public void LogOut(int personId)
+        public async Task LogOut(string userId)
         {
-            _context.Connections.RemoveRange(_context.Connections.Where(p => p.UserId == personId).ToList());
-            _context.SaveChanges();
-            Clients.Caller.SendAsync("logoutResponse");
-            Clients.Others.SendAsync("userOff", personId);
+            try
+            {
+                await _db.Connections.DeleteManyAsync(c => c.UserId == userId);
+                await Clients.Caller.SendAsync("logoutResponse");
+                await Clients.Others.SendAsync("userOff", userId);
+            }
+            catch (Exception ex)
+            {
+                // Optionally log exception
+            }
         }
 
         public async Task GetOnlineUsers()
         {
-            int currUserId = _context.Connections.Where(c => c.SignalrId == Context.ConnectionId).Select(c => c.UserId).SingleOrDefault();
-            var onlineUsers = _context.Connections
-                .Where(c => c.UserId != currUserId)
-                .Select(c =>
-                    new UserDto()
-                    {
-                        UserId = c.UserId,
-                        FullName = _context.Users.Where(p => p.Id == c.UserId).Select(p => p.Name).SingleOrDefault(),
-                        SignalrId = c.SignalrId
-                    }
-                ).ToList();
-            await Clients.Caller.SendAsync("getOnlineUsersResponse", onlineUsers);
+            try
+            {
+                var connection = await _db.Connections
+                    .Find(c => c.SignalrId == Context.ConnectionId)
+                    .FirstOrDefaultAsync();
+
+                var currUserId = connection?.UserId;
+
+                var onlineConnections = await _db.Connections
+                    .Find(c => c.UserId != currUserId)
+                    .ToListAsync();
+
+                var onlineUsers = onlineConnections.Select(c => new UserDto
+                {
+                    UserId = c.UserId,
+                    FullName = c.UserFullname,
+                    SignalrId = c.SignalrId
+                }).ToList();
+
+                await Clients.Caller.SendAsync("getOnlineUsersResponse", onlineUsers);
+            }
+            catch (Exception ex)
+            {
+                // Optionally log exception
+            }
         }
 
         public async Task SendMsg(Message msgInfo)

@@ -1,4 +1,6 @@
 using LogLog.Service;
+using LogLog.Service.Configurations;
+using LogLog.Service.Domain.Models;
 using LogLog.Service.HubConfig;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -12,7 +14,23 @@ builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle  
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
-builder.Services.AddConnectionString(builder.Configuration);
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAngular", policy =>
+    {
+        policy
+            .WithOrigins("http://localhost:4200")
+            .AllowAnyHeader()
+            .AllowAnyMethod()
+            .AllowCredentials(); // quan trong voi SignalR
+    });
+});
+//builder.Services.AddConnectionString(builder.Configuration);
+
+builder.Services.Configure<MongoDbSettings>(builder.Configuration.GetSection("MongoDbSettings"));
+builder.Services.AddSingleton<MongoDbService>();
+
 builder.Services.AddAuthentication("Bearer")
    .AddJwtBearer(options =>
    {
@@ -34,7 +52,9 @@ app.UseHttpsRedirection();
 
 app.UseAuthorization();
 
-app.MapHub<MyHub>("/chat");
+app.UseCors("AllowAngular");
+
+app.MapHub<MyHub>("/hub");
 
 app.MapControllers();
 
