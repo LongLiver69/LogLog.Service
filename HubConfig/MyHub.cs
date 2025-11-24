@@ -1,6 +1,7 @@
-﻿using Microsoft.AspNetCore.SignalR;
+﻿using LogLog.Service.Configurations;
 using LogLog.Service.Domain.Entities;
-using LogLog.Service.Configurations;
+using Microsoft.AspNetCore.SignalR;
+using Microsoft.EntityFrameworkCore;
 using MongoDB.Driver;
 
 namespace LogLog.Service.HubConfig
@@ -12,6 +13,38 @@ namespace LogLog.Service.HubConfig
         public MyHub(MongoDbService db)
         {
             _db = db;
+        }
+
+        public override async Task OnConnectedAsync()
+        {
+            string currSignalrID = Context.ConnectionId;
+
+            var user = Context.User;
+
+            var userId = user?.FindFirst("sub")?.Value;
+            var username = user?.FindFirst("preferred_username")?.Value;
+            var email = user?.FindFirst("email")?.Value;
+            var fullname = user?.FindFirst("name")?.Value;
+
+            //var currconnect = new Connection
+            //{
+            //    UserId = User.Id,
+            //    SignalrId = currSignalrID,
+            //    Timestamp = DateTime.Now
+            //};
+            //await _db.Connections.AddAsync(currconnect);
+            //await _db.SaveChangesAsync();
+
+            //var res = new UserDto()
+            //{
+            //    UserId = tempUser.Id,
+            //    FullName = tempUser.Name,
+            //    SignalrId = currSignalrID
+            //};
+
+            //await Clients.Caller.SendAsync("authMeResponseSuccess", res);
+            //await Clients.Others.SendAsync("userOn", res);
+            Console.WriteLine($"User connected: {user} ({userId}) with SignalR ID: {currSignalrID}");
         }
 
         public override async Task OnDisconnectedAsync(Exception? exception)

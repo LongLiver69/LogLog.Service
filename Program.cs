@@ -2,6 +2,7 @@ using LogLog.Service;
 using LogLog.Service.Configurations;
 using LogLog.Service.Domain.Models;
 using LogLog.Service.HubConfig;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -37,6 +38,19 @@ builder.Services.AddAuthentication("Bearer")
        options.Authority = "http://localhost:8080/realms/master";
        options.RequireHttpsMetadata = false;
        options.Audience = "loglog-client";
+       options.Events = new JwtBearerEvents
+       {
+           OnMessageReceived = context =>
+           {
+               var accessToken = context.Request.Query["access_token"];
+               var path = context.HttpContext.Request.Path;
+               if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/hub"))
+               {
+                   context.Token = accessToken;
+               }
+               return Task.CompletedTask;
+           }
+       };
    });
 
 var app = builder.Build();
