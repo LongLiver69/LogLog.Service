@@ -3,6 +3,7 @@ using LogLog.Service.Domain.Entities;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using MongoDB.Driver;
+using System.Security.Claims;
 
 namespace LogLog.Service.HubConfig
 {
@@ -21,30 +22,40 @@ namespace LogLog.Service.HubConfig
 
             var user = Context.User;
 
-            var userId = user?.FindFirst("sub")?.Value;
-            var username = user?.FindFirst("preferred_username")?.Value;
-            var email = user?.FindFirst("email")?.Value;
-            var fullname = user?.FindFirst("name")?.Value;
+            Console.WriteLine($"[Hub] User authenticated: {user?.Identity?.IsAuthenticated}");
+            Console.WriteLine($"[Hub] User identity name: {user?.Identity?.Name}");
 
-            //var currconnect = new Connection
-            //{
-            //    UserId = User.Id,
-            //    SignalrId = currSignalrID,
-            //    Timestamp = DateTime.Now
-            //};
-            //await _db.Connections.AddAsync(currconnect);
-            //await _db.SaveChangesAsync();
+            // Try both short names (if DefaultInboundClaimTypeMap.Clear() works) 
+            // and full ClaimTypes URLs (if it doesn't)
+            var userId = user?.FindFirst("sub")?.Value
+                      ?? user?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
-            //var res = new UserDto()
-            //{
-            //    UserId = tempUser.Id,
-            //    FullName = tempUser.Name,
-            //    SignalrId = currSignalrID
-            //};
+            var username = user?.FindFirst("preferred_username")?.Value
+                        ?? user?.Identity?.Name;
 
-            //await Clients.Caller.SendAsync("authMeResponseSuccess", res);
-            //await Clients.Others.SendAsync("userOn", res);
-            Console.WriteLine($"User connected: {user} ({userId}) with SignalR ID: {currSignalrID}");
+            var email = user?.FindFirst("email")?.Value
+                     ?? user?.FindFirst(ClaimTypes.Email)?.Value;
+
+            var givenName = user?.FindFirst("given_name")?.Value
+                         ?? user?.FindFirst(ClaimTypes.GivenName)?.Value;
+
+            var familyName = user?.FindFirst("family_name")?.Value
+                          ?? user?.FindFirst(ClaimTypes.Surname)?.Value;
+
+            var fullname = user?.FindFirst("name")?.Value
+                        ?? user?.FindFirst(ClaimTypes.Name)?.Value
+                        ?? $"{givenName} {familyName}".Trim();
+
+            var connection = new Connection
+            {
+                UserId = userId!,
+                UserFullname = fullname,
+                SignalrId = currSignalrID,
+                CreatedAt = DateTime.UtcNow
+            };
+            await _db.Connections.InsertOneAsync(connection);
+
+            await base.OnConnectedAsync();
         }
 
         public override async Task OnDisconnectedAsync(Exception? exception)
@@ -80,7 +91,7 @@ namespace LogLog.Service.HubConfig
             }
             catch (Exception ex)
             {
-                // Optionally log exception
+                Console.WriteLine(ex);
             }
         }
 
@@ -109,7 +120,7 @@ namespace LogLog.Service.HubConfig
             }
             catch (Exception ex)
             {
-                // Optionally log exception
+                Console.WriteLine(ex);
             }
         }
 

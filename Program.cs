@@ -3,8 +3,14 @@ using LogLog.Service.Configurations;
 using LogLog.Service.Domain.Models;
 using LogLog.Service.HubConfig;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// IMPORTANT: keep original claim names from Keycloak
+JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
 
 // Add services to the container.  
 builder.Services.AddSignalR(option =>
@@ -32,12 +38,22 @@ builder.Services.AddCors(options =>
 builder.Services.Configure<MongoDbSettings>(builder.Configuration.GetSection("MongoDbSettings"));
 builder.Services.AddSingleton<MongoDbService>();
 
-builder.Services.AddAuthentication("Bearer")
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
    .AddJwtBearer(options =>
    {
        options.Authority = "http://localhost:8080/realms/master";
        options.RequireHttpsMetadata = false;
-       options.Audience = "loglog-client";
+       options.Audience = "loglog-client";  // Keycloak uses "account" as audience
+       
+       options.TokenValidationParameters = new TokenValidationParameters
+       {
+           ValidateAudience = false,  // Keycloak token has multiple audiences
+           ValidateIssuer = true,
+           ValidateLifetime = true,
+           NameClaimType = "preferred_username",
+           RoleClaimType = "realm_access.roles",
+       };
+       
        options.Events = new JwtBearerEvents
        {
            OnMessageReceived = context =>
@@ -49,9 +65,24 @@ builder.Services.AddAuthentication("Bearer")
                    context.Token = accessToken;
                }
                return Task.CompletedTask;
-           }
+           },
+           OnTokenValidated = context =>
+           {
+               foreach (var claim in context.Principal?.Claims ?? Enumerable.Empty<Claim>())
+               {
+                   Console.WriteLine($"  [{claim.Type}] = {claim.Value}");
+               }
+               return Task.CompletedTask;
+           },
+           //OnAuthenticationFailed = context =>
+           //{
+           //    Console.WriteLine($"[JWT] Auth failed: {context.Exception.Message}");
+           //    return Task.CompletedTask;
+           //}
        };
    });
+
+builder.Services.AddAuthorization();
 
 var app = builder.Build();
 
@@ -64,9 +95,10 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-app.UseAuthorization();
-
 app.UseCors("AllowAngular");
+
+app.UseAuthentication();
+app.UseAuthorization();
 
 app.MapHub<MyHub>("/hub");
 
