@@ -1,4 +1,3 @@
-using LogLog.Service;
 using LogLog.Service.Configurations;
 using LogLog.Service.Domain.Models;
 using LogLog.Service.HubConfig;
@@ -8,9 +7,6 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 
 var builder = WebApplication.CreateBuilder(args);
-
-// IMPORTANT: keep original claim names from Keycloak
-JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
 
 // Add services to the container.  
 builder.Services.AddSignalR(option =>
@@ -42,9 +38,10 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
    .AddJwtBearer(options =>
    {
        options.Authority = "http://localhost:8080/realms/master";
+       options.Audience = "loglog-client";
        options.RequireHttpsMetadata = false;
-       options.Audience = "loglog-client";  // Keycloak uses "account" as audience
-       
+       options.MapInboundClaims = false;  // This is the KEY setting to keep original claim names!
+
        options.TokenValidationParameters = new TokenValidationParameters
        {
            ValidateAudience = false,  // Keycloak token has multiple audiences
@@ -66,14 +63,15 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                }
                return Task.CompletedTask;
            },
-           OnTokenValidated = context =>
-           {
-               foreach (var claim in context.Principal?.Claims ?? Enumerable.Empty<Claim>())
-               {
-                   Console.WriteLine($"  [{claim.Type}] = {claim.Value}");
-               }
-               return Task.CompletedTask;
-           },
+           //OnTokenValidated = context =>
+           //{
+           //    Console.WriteLine("[JWT] Token validated. Claims:");
+           //    foreach (var claim in context.Principal?.Claims ?? Enumerable.Empty<Claim>())
+           //    {
+           //        Console.WriteLine($"  [{claim.Type}] = {claim.Value}");
+           //    }
+           //    return Task.CompletedTask;
+           //},
            //OnAuthenticationFailed = context =>
            //{
            //    Console.WriteLine($"[JWT] Auth failed: {context.Exception.Message}");

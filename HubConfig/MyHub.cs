@@ -21,30 +21,12 @@ namespace LogLog.Service.HubConfig
             string currSignalrID = Context.ConnectionId;
 
             var user = Context.User;
-
-            Console.WriteLine($"[Hub] User authenticated: {user?.Identity?.IsAuthenticated}");
-            Console.WriteLine($"[Hub] User identity name: {user?.Identity?.Name}");
-
-            // Try both short names (if DefaultInboundClaimTypeMap.Clear() works) 
-            // and full ClaimTypes URLs (if it doesn't)
-            var userId = user?.FindFirst("sub")?.Value
-                      ?? user?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-
-            var username = user?.FindFirst("preferred_username")?.Value
-                        ?? user?.Identity?.Name;
-
-            var email = user?.FindFirst("email")?.Value
-                     ?? user?.FindFirst(ClaimTypes.Email)?.Value;
-
-            var givenName = user?.FindFirst("given_name")?.Value
-                         ?? user?.FindFirst(ClaimTypes.GivenName)?.Value;
-
-            var familyName = user?.FindFirst("family_name")?.Value
-                          ?? user?.FindFirst(ClaimTypes.Surname)?.Value;
-
-            var fullname = user?.FindFirst("name")?.Value
-                        ?? user?.FindFirst(ClaimTypes.Name)?.Value
-                        ?? $"{givenName} {familyName}".Trim();
+            var userId = user?.FindFirst("sub")?.Value;
+            var username = user?.FindFirst("preferred_username")?.Value;
+            var email = user?.FindFirst("email")?.Value;
+            var givenName = user?.FindFirst("given_name")?.Value;
+            var familyName = user?.FindFirst("family_name")?.Value;
+            var fullname = user?.FindFirst("name")?.Value ?? $"{givenName} {familyName}".Trim();
 
             var connection = new Connection
             {
