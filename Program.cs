@@ -56,7 +56,8 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
            OnMessageReceived = context =>
            {
                var accessToken = context.Request.Query["access_token"];
-               var path = context.HttpContext.Request.Path;
+               var path = context.Request.Path;
+
                if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/hub"))
                {
                    context.Token = accessToken;
