@@ -3,7 +3,6 @@ using LogLog.Service.Domain.Entities;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using MongoDB.Driver;
-using System.Security.Claims;
 
 namespace LogLog.Service.HubConfig
 {
@@ -36,6 +35,7 @@ namespace LogLog.Service.HubConfig
                 CreatedAt = DateTime.UtcNow
             };
             await _db.Connections.InsertOneAsync(connection);
+            await Clients.Others.SendAsync("userOn", connection);
 
             await base.OnConnectedAsync();
         }
@@ -63,19 +63,19 @@ namespace LogLog.Service.HubConfig
             await base.OnDisconnectedAsync(exception);
         }
 
-        public async Task LogOut(string userId)
-        {
-            try
-            {
-                await _db.Connections.DeleteManyAsync(c => c.UserId == userId);
-                await Clients.Caller.SendAsync("logoutResponse");
-                await Clients.Others.SendAsync("userOff", userId);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine(ex);
-            }
-        }
+        //public async Task LogOut(string userId)
+        //{
+        //    try
+        //    {
+        //        await _db.Connections.DeleteManyAsync(c => c.UserId == userId);
+        //        await Clients.Caller.SendAsync("logoutResponse");
+        //        await Clients.Others.SendAsync("userOff", userId);
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        Console.WriteLine(ex);
+        //    }
+        //}
 
         public async Task GetOnlineUsers()
         {
@@ -91,14 +91,7 @@ namespace LogLog.Service.HubConfig
                     .Find(c => c.UserId != currUserId)
                     .ToListAsync();
 
-                var onlineUsers = onlineConnections.Select(c => new UserDto
-                {
-                    UserId = c.UserId,
-                    FullName = c.UserFullname,
-                    SignalrId = c.SignalrId
-                }).ToList();
-
-                await Clients.Caller.SendAsync("getOnlineUsersResponse", onlineUsers);
+                await Clients.Caller.SendAsync("getOnlineUsersResponse", onlineConnections);
             }
             catch (Exception ex)
             {

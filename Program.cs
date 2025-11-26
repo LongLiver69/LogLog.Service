@@ -3,6 +3,7 @@ using LogLog.Service.Domain.Models;
 using LogLog.Service.HubConfig;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
+using MongoDB.Driver;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 
@@ -82,6 +83,9 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
    });
 
 builder.Services.AddAuthorization();
+
+// Delete all connections on server stop
+builder.Services.AddHostedService<CustomHostedService>();
 
 var app = builder.Build();
 
