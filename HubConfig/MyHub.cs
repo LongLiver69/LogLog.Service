@@ -17,8 +17,6 @@ namespace LogLog.Service.HubConfig
 
         public override async Task OnConnectedAsync()
         {
-            string currSignalrID = Context.ConnectionId;
-
             var user = Context.User;
             var userId = user?.FindFirst("sub")?.Value;
             var username = user?.FindFirst("preferred_username")?.Value;
@@ -27,15 +25,28 @@ namespace LogLog.Service.HubConfig
             var familyName = user?.FindFirst("family_name")?.Value;
             var fullname = user?.FindFirst("name")?.Value ?? $"{givenName} {familyName}".Trim();
 
-            var connection = new Connection
+            if (!string.IsNullOrEmpty(userId))
             {
-                UserId = userId!,
-                UserFullname = fullname,
-                SignalrId = currSignalrID,
-                CreatedAt = DateTime.UtcNow
-            };
-            await _db.Connections.InsertOneAsync(connection);
-            await Clients.Others.SendAsync("userOn", connection);
+                // Kiểm tra xem user đã có connection nào khác chưa
+                var existingConnections = await _db.Connections
+                    .Find(c => c.UserId == userId)
+                    .ToListAsync();
+
+                var connection = new Connection
+                {
+                    UserId = userId!,
+                    UserFullname = fullname,
+                    SignalrId = Context.ConnectionId,
+                    CreatedAt = DateTime.UtcNow
+                };
+                await _db.Connections.InsertOneAsync(connection);
+
+                // Chỉ thông báo "userOn" nếu đây là connection đầu tiên của user
+                if (existingConnections.Count == 0)
+                {
+                    await Clients.Others.SendAsync("userOn", connection);
+                }
+            }
 
             await base.OnConnectedAsync();
         }
@@ -44,15 +55,24 @@ namespace LogLog.Service.HubConfig
         {
             try
             {
-                var connection = await _db.Connections
-                    .Find(c => c.SignalrId == Context.ConnectionId)
-                    .FirstOrDefaultAsync();
+                var user = Context.User;
+                var userId = user?.FindFirst("sub")?.Value;
 
-                if (connection != null)
+                if (!string.IsNullOrEmpty(userId))
                 {
-                    var userId = connection.UserId;
-                    await _db.Connections.DeleteManyAsync(c => c.UserId == userId);
-                    await Clients.Others.SendAsync("userOff", userId);
+                    // Xóa connection hiện tại
+                    await _db.Connections.DeleteOneAsync(c => c.SignalrId == Context.ConnectionId);
+
+                    // Kiểm tra xem user còn connection nào khác không
+                    var remainingConnections = await _db.Connections
+                        .Find(c => c.UserId == userId)
+                        .ToListAsync();
+
+                    // Chỉ thông báo "userOff" nếu không còn connection nào
+                    if (remainingConnections.Count == 0)
+                    {
+                        await Clients.Others.SendAsync("userOff", userId);
+                    }
                 }
             }
             catch (Exception ex)
@@ -81,14 +101,11 @@ namespace LogLog.Service.HubConfig
         {
             try
             {
-                var connection = await _db.Connections
-                    .Find(c => c.SignalrId == Context.ConnectionId)
-                    .FirstOrDefaultAsync();
-
-                var currUserId = connection?.UserId;
+                var user = Context.User;
+                var userId = user?.FindFirst("sub")?.Value;
 
                 var onlineConnections = await _db.Connections
-                    .Find(c => c.UserId != currUserId)
+                    .Find(c => c.UserId != userId)
                     .ToListAsync();
 
                 await Clients.Caller.SendAsync("getOnlineUsersResponse", onlineConnections);

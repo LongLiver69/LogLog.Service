@@ -67,11 +67,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
            },
            //OnTokenValidated = context =>
            //{
-           //    Console.WriteLine("[JWT] Token validated. Claims:");
-           //    foreach (var claim in context.Principal?.Claims ?? Enumerable.Empty<Claim>())
-           //    {
-           //        Console.WriteLine($"  [{claim.Type}] = {claim.Value}");
-           //    }
+           //    Console.WriteLine("[JWT] Token validated.");
            //    return Task.CompletedTask;
            //},
            //OnAuthenticationFailed = context =>
