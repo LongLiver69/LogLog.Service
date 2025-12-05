@@ -40,6 +40,7 @@ namespace LogLog.Service.HubConfig
                     CreatedAt = DateTime.UtcNow
                 };
                 await _db.Connections.InsertOneAsync(connection);
+                await Clients.Caller.SendAsync("infoResponse", connection);
 
                 // Chỉ thông báo "userOn" nếu đây là connection đầu tiên của user
                 if (existingConnections.Count == 0)
@@ -118,7 +119,17 @@ namespace LogLog.Service.HubConfig
 
         public async Task SendMsg(Message msgInfo)
         {
-            await Clients.Client(msgInfo.ToConnectionId).SendAsync("sendMsgResponse", msgInfo);
+            // Lấy tất cả SignalR IDs của user nhận
+            var recipientConnectionIds = await _db.Connections
+                .Find(c => c.UserId == msgInfo.ReceiverId)
+                .Project(c => c.SignalrId)
+                .ToListAsync();
+
+            // Gửi tin nhắn đến tất cả connections cùng lúc
+            if (recipientConnectionIds.Any())
+            {
+                await Clients.Clients(recipientConnectionIds).SendAsync("sendMsgResponse", msgInfo);
+            }
         }
     }
 }
