@@ -35,6 +35,8 @@ builder.Services.AddCors(options =>
 builder.Services.Configure<MongoDbSettings>(builder.Configuration.GetSection("MongoDbSettings"));
 builder.Services.AddSingleton<MongoDbService>();
 
+var hubPattern = builder.Configuration.GetValue<string>("HubPattern");
+
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
    .AddJwtBearer(options =>
    {
@@ -59,7 +61,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                var accessToken = context.Request.Query["access_token"];
                var path = context.Request.Path;
 
-               if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/hub"))
+               if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments(hubPattern))
                {
                    context.Token = accessToken;
                }
@@ -99,7 +101,7 @@ app.UseCors("AllowAngular");
 app.UseAuthentication();
 app.UseAuthorization();
 
-app.MapHub<MyHub>("/hub");
+app.MapHub<MyHub>(hubPattern ?? "/hub");
 
 app.MapControllers();
 
