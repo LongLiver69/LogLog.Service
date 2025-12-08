@@ -1,13 +1,42 @@
-using LogLog.Service.Configurations;
+﻿using LogLog.Service.Configurations;
 using LogLog.Service.Domain.Models;
 using LogLog.Service.HubConfig;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
-using MongoDB.Driver;
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
+using NpgsqlTypes;
+using Serilog;
+using Serilog.Events;
+using Serilog.Sinks.PostgreSQL;
 
 var builder = WebApplication.CreateBuilder(args);
+
+//builder.Logging.ClearProviders();  // Tat cac logger mac dinh
+//
+//Log.Logger = new LoggerConfiguration()
+//    .MinimumLevel.Override("Microsoft", LogEventLevel.Fatal)
+//    .MinimumLevel.Override("Microsoft.AspNetCore", LogEventLevel.Fatal)
+//    .MinimumLevel.Override("Microsoft.EntityFrameworkCore", LogEventLevel.Fatal)
+//    .MinimumLevel.Override("System", LogEventLevel.Fatal)
+//    .MinimumLevel.Information()
+//    .ReadFrom.Configuration(builder.Configuration)
+//    .WriteTo.Console()
+//    .WriteTo.PostgreSQL(
+//        connectionString: builder.Configuration.GetConnectionString("PostgreSQL")!,
+//        tableName: "logs",
+//        needAutoCreateTable: true,
+//        columnOptions: new Dictionary<string, ColumnWriterBase>
+//        {
+//            { "message", new RenderedMessageColumnWriter(NpgsqlDbType.Text) },
+//            { "message_template", new MessageTemplateColumnWriter(NpgsqlDbType.Text) },
+//            { "level", new LevelColumnWriter(true, NpgsqlDbType.Varchar) },
+//            { "username", new SinglePropertyColumnWriter("Username", PropertyWriteMethod.Raw, NpgsqlDbType.Text) },
+//            { "timestamp", new TimestampColumnWriter(NpgsqlDbType.Timestamp) },
+//            { "exception", new ExceptionColumnWriter(NpgsqlDbType.Text) }
+//        })
+//    .Enrich.FromLogContext()
+//    .CreateLogger();
+
+//builder.Host.UseSerilog();
 
 // Add services to the container.  
 builder.Services.AddSignalR(option =>
@@ -19,17 +48,17 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-builder.Services.AddCors(options =>
-{
-    options.AddPolicy("AllowAngular", policy =>
-    {
-        policy
-            .WithOrigins("http://localhost:4200")
-            .AllowAnyHeader()
-            .AllowAnyMethod()
-            .AllowCredentials(); // quan trong voi SignalR
-    });
-});
+//builder.Services.AddCors(options =>
+//{
+//    options.AddPolicy("AllowAngular", policy =>
+//    {
+//        policy
+//            .WithOrigins("http://localhost:4200")
+//            .AllowAnyHeader()
+//            .AllowAnyMethod()
+//            .AllowCredentials();
+//    });
+//});
 //builder.Services.AddConnectionString(builder.Configuration);
 
 builder.Services.Configure<MongoDbSettings>(builder.Configuration.GetSection("MongoDbSettings"));
@@ -53,7 +82,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
            NameClaimType = "preferred_username",
            RoleClaimType = "realm_access.roles",
        };
-       
+
        options.Events = new JwtBearerEvents
        {
            OnMessageReceived = context =>
@@ -96,12 +125,12 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-app.UseCors("AllowAngular");
+//app.UseCors("AllowAngular");
 
 app.UseAuthentication();
 app.UseAuthorization();
 
-app.MapHub<MyHub>(hubPattern ?? "/hub");
+app.MapHub<MyHub>(hubPattern!);
 
 app.MapControllers();
 

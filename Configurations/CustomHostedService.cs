@@ -32,7 +32,7 @@ namespace LogLog.Service.Configurations
             {
                 _logger.LogError(ex, "Error clearing connections during shutdown");
             }
-            
+
             return;
         }
     }
