@@ -3,6 +3,7 @@ using LogLog.Service.Domain.Models;
 using LogLog.Service.HubConfig;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
+using Minio;
 using NpgsqlTypes;
 using Serilog;
 using Serilog.Events;
@@ -48,19 +49,31 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-//builder.Services.AddCors(options =>
-//{
-//    options.AddPolicy("AllowAngular", policy =>
-//    {
-//        policy
-//            .WithOrigins("http://localhost:4200")
-//            .AllowAnyHeader()
-//            .AllowAnyMethod()
-//            .AllowCredentials();
-//    });
-//});
-//builder.Services.AddConnectionString(builder.Configuration);
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAngular", policy =>
+    {
+        policy
+            .WithOrigins("http://localhost:4200")
+            .AllowAnyHeader()
+            .AllowAnyMethod()
+            .AllowCredentials();
+    });
+});
 
+builder.Services.AddSingleton<IMinioClient>(sp =>
+{
+    var config = sp.GetRequiredService<IConfiguration>();
+    return new MinioClient()
+        .WithEndpoint(config["MinIO:Endpoint"])
+        .WithCredentials(
+            config["MinIO:AccessKey"],
+            config["MinIO:SecretKey"])
+        .WithSSL(false)
+        .Build();
+});
+
+//builder.Services.AddConnectionString(builder.Configuration);
 builder.Services.Configure<MongoDbSettings>(builder.Configuration.GetSection("MongoDbSettings"));
 builder.Services.AddSingleton<MongoDbService>();
 
@@ -111,7 +124,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 builder.Services.AddAuthorization();
 
-// Delete all connections on server stop
+// Delete all signalr connections on server stop
 builder.Services.AddHostedService<CustomHostedService>();
 
 var app = builder.Build();
@@ -125,7 +138,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-//app.UseCors("AllowAngular");
+app.UseCors("AllowAngular");
 
 app.UseAuthentication();
 app.UseAuthorization();
