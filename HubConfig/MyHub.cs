@@ -47,6 +47,10 @@ namespace LogLog.Service.HubConfig
                 {
                     await Clients.Others.SendAsync("userOn", connection);
                 }
+                else
+                {
+                    _db.Connections.DeleteMany(c => c.UserId == userId && c.SignalrId != connection.SignalrId);
+                }
             }
 
             await base.OnConnectedAsync();
@@ -129,6 +133,7 @@ namespace LogLog.Service.HubConfig
             if (recipientConnectionIds.Any())
             {
                 await Clients.Clients(recipientConnectionIds).SendAsync("sendMsgResponse", msgInfo);
+                _db.Messages.InsertOne(msgInfo);
             }
         }
     }

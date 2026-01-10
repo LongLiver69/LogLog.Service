@@ -20,29 +20,31 @@ namespace LogLog.Service.Controllers
         [HttpPost("upload-url")]
         public async Task<IActionResult> GetUploadUrl([FromBody] string fileName)
         {
-            var objectName = $"{fileName}_{Guid.NewGuid()}";
+            var fileNameWithoutExt = Path.GetFileNameWithoutExtension(fileName);
+            var extension = Path.GetExtension(fileName);
+            var objectName = $"{fileNameWithoutExt}_{Guid.NewGuid()}{extension}";
 
             var url = await _minio.PresignedPutObjectAsync(
                 new PresignedPutObjectArgs()
                     .WithBucket(_config["MinIO:Bucket"])
                     .WithObject(objectName)
-                    .WithExpiry(180) // 3 phút
+                    .WithExpiry(60 * 2) // 2 phút
             );
 
             return Ok(new { objectName, url });
         }
 
-        [HttpGet("download-url")]
+        [HttpGet("download-url/{objectName}")]
         public async Task<IActionResult> GetDownloadUrl(string objectName)
         {
             var url = await _minio.PresignedGetObjectAsync(
                 new PresignedGetObjectArgs()
                     .WithBucket(_config["MinIO:Bucket"])
                     .WithObject(objectName)
-                    .WithExpiry(180)
+                    .WithExpiry(60 * 2) // 2 phút
             );
 
-            return Ok(url);
+            return Ok(new { url });
         }
     }
 }
