@@ -9,10 +9,12 @@ namespace LogLog.Service.HubConfig
     public class MyHub : Hub
     {
         private readonly MongoDbService _db;
+        private readonly ILogger<MyHub> _logger;
 
-        public MyHub(MongoDbService db)
+        public MyHub(MongoDbService db, ILogger<MyHub> logger)
         {
             _db = db;
+            _logger = logger;
         }
 
         public override async Task OnConnectedAsync()
@@ -24,6 +26,7 @@ namespace LogLog.Service.HubConfig
             var givenName = user?.FindFirst("given_name")?.Value;
             var familyName = user?.FindFirst("family_name")?.Value;
             var fullname = user?.FindFirst("name")?.Value ?? $"{givenName} {familyName}".Trim();
+            var avatarUrl = user?.FindFirst("avatar_url")?.Value;
 
             if (!string.IsNullOrEmpty(userId))
             {

@@ -77,12 +77,14 @@ builder.Services.AddSingleton<IMinioClient>(sp =>
 builder.Services.Configure<MongoDbSettings>(builder.Configuration.GetSection("MongoDbSettings"));
 builder.Services.AddSingleton<MongoDbService>();
 
+builder.Services.AddHttpClient();
+
 var hubPattern = builder.Configuration.GetValue<string>("HubPattern");
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
    .AddJwtBearer(options =>
    {
-       options.Authority = "http://localhost:8080/realms/master";
+       options.Authority = builder.Configuration["Keycloak:Authority"];
        options.Audience = "loglog-client";
        options.RequireHttpsMetadata = false;
        options.MapInboundClaims = false;  // This is the KEY setting to keep original claim names!

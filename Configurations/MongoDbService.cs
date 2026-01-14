@@ -17,5 +17,6 @@ namespace LogLog.Service.Configurations
 
         public IMongoCollection<Connection> Connections => _database.GetCollection<Connection>("connections");
         public IMongoCollection<Message> Messages => _database.GetCollection<Message>("messages");
+        public IMongoCollection<Avatar> Avatars => _database.GetCollection<Avatar>("avatars");
     }
 }
