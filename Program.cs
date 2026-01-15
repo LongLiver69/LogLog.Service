@@ -2,6 +2,7 @@
 using LogLog.Service.Domain.Models;
 using LogLog.Service.HubConfig;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 using Minio;
 using NpgsqlTypes;
@@ -85,7 +86,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
    .AddJwtBearer(options =>
    {
        options.Authority = builder.Configuration["Keycloak:Authority"];
-       options.Audience = "loglog-client";
+       options.Audience = builder.Configuration["Keycloak:Audience"];
        options.RequireHttpsMetadata = false;
        options.MapInboundClaims = false;  // This is the KEY setting to keep original claim names!
 
@@ -125,6 +126,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
    });
 
 builder.Services.AddAuthorization();
+builder.Services.AddAutoMapper(cfg => { }, AppDomain.CurrentDomain.GetAssemblies());
 
 // Delete all signalr connections on server stop
 builder.Services.AddHostedService<CustomHostedService>();

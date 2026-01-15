@@ -1,6 +1,9 @@
-﻿using LogLog.Service.Configurations;
+﻿using AutoMapper;
+using LogLog.Service.Configurations;
 using LogLog.Service.Domain.Entities;
 using Microsoft.AspNetCore.Mvc;
+using Minio;
+using Minio.DataModel.Args;
 using MongoDB.Driver;
 
 namespace LogLog.Service.Controllers
@@ -9,12 +12,23 @@ namespace LogLog.Service.Controllers
     [ApiController]
     public class AvatarController : ControllerBase
     {
+        private readonly IMinioClient _minio;
+        private readonly IConfiguration _config;
         private readonly MongoDbService _db;
+        private readonly IMapper _mapper;
         private readonly ILogger<AvatarController> _logger;
 
-        public AvatarController(MongoDbService db, ILogger<AvatarController> logger)
+        public AvatarController(
+            IMinioClient minio,
+            IConfiguration config,
+            MongoDbService db,
+            IMapper mapper,
+            ILogger<AvatarController> logger)
         {
+            _minio = minio;
+            _config = config;
             _db = db;
+            _mapper = mapper;
             _logger = logger;
         }
 
@@ -40,21 +54,20 @@ namespace LogLog.Service.Controllers
                 }
                 else
                 {
-                    await _db.Avatars.UpdateOneAsync(
-                        _ => _.UserId == userId,
-                        Builders<Avatar>.Update
-                            .Set(x => x.AvatarName, request.AvatarName)
-                            .Set(x => x.PositionRatioX, request.PositionRatioX)
-                            .Set(x => x.PositionRatioY, request.PositionRatioY)
-                            .Set(x => x.ZoomLevel, request.ZoomLevel)
-                            .Set(x => x.UpdatedAt, DateTime.UtcNow));
+                    avatar.AvatarName = request.AvatarName;
+                    avatar.PositionRatioX = request.PositionRatioX;
+                    avatar.PositionRatioY = request.PositionRatioY;
+                    avatar.ZoomLevel = request.ZoomLevel;
+                    avatar.UpdatedAt = DateTime.UtcNow;
+
+                    await _db.Avatars.ReplaceOneAsync(_ => _.UserId == userId, avatar);
                 }
                 return Ok();
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error updating avatar");
-                return StatusCode(500, "Internal server error");
+                return StatusCode(500, ex);
             }
         }
 
@@ -64,20 +77,23 @@ namespace LogLog.Service.Controllers
             var userId = User.FindFirst("sub")?.Value;
             var avatar = await _db.Avatars.Find(_ => _.UserId == userId).FirstOrDefaultAsync();
 
-            if (avatar == null)
+            if (avatar == null || string.IsNullOrEmpty(avatar.AvatarName))
             {
                 return Ok();
             }
 
-            return Ok(avatar);
+            var url = await _minio.PresignedGetObjectAsync(
+                new PresignedGetObjectArgs()
+                    .WithBucket(_config["MinIO:Bucket"])
+                    .WithObject(avatar.AvatarName)
+                    .WithExpiry(60 * 2)
+            );
+
+            var avatarDto = _mapper.Map<AvatarDto>(avatar);
+            avatarDto.AvatarUrl = url;
+
+            return Ok(avatarDto);
         }
     }
 
-    public class UpdateAvatarRequest
-    {
-        public string AvatarName { get; set; } = null!;
-        public float PositionRatioX { get; set; }
-        public float PositionRatioY { get; set; }
-        public float ZoomLevel { get; set; }
-    }
 }
