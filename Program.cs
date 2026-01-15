@@ -1,6 +1,6 @@
 ﻿using LogLog.Service.Configurations;
 using LogLog.Service.Domain.Models;
-using LogLog.Service.HubConfig;
+using LogLog.Service.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
@@ -147,7 +147,7 @@ app.UseCors("AllowAngular");
 app.UseAuthentication();
 app.UseAuthorization();
 
-app.MapHub<MyHub>(hubPattern!);
+app.MapHub<SignalrHub>(hubPattern!);
 
 app.MapControllers();
 

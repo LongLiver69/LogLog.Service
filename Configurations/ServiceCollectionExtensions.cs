@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using MongoDB.Driver;
 
-namespace LogLog.Service
+namespace LogLog.Service.Configurations
 {
     public static class ServiceCollectionExtensions
     {

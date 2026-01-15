@@ -1,17 +1,16 @@
-﻿using LogLog.Service.Configurations;
-using LogLog.Service.Domain.Entities;
+﻿using LogLog.Service.Domain.Entities;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using MongoDB.Driver;
 
-namespace LogLog.Service.HubConfig
+namespace LogLog.Service.Configurations
 {
-    public class MyHub : Hub
+    public class SignalrHub : Hub
     {
         private readonly MongoDbService _db;
-        private readonly ILogger<MyHub> _logger;
+        private readonly ILogger<SignalrHub> _logger;
 
-        public MyHub(MongoDbService db, ILogger<MyHub> logger)
+        public SignalrHub(MongoDbService db, ILogger<SignalrHub> logger)
         {
             _db = db;
             _logger = logger;

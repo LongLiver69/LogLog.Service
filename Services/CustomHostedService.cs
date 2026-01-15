@@ -1,6 +1,7 @@
+using LogLog.Service.Configurations;
 using MongoDB.Driver;
 
-namespace LogLog.Service.Configurations
+namespace LogLog.Service.Services
 {
     public class CustomHostedService : IHostedService
     {
