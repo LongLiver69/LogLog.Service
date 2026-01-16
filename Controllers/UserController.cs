@@ -5,19 +5,20 @@ namespace LogLog.Service.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class UsersController : ControllerBase
+    public class UserController : ControllerBase
     {
         private readonly KeycloakUserService _keycloak;
 
-        public UsersController(KeycloakUserService keycloak)
+        public UserController(KeycloakUserService keycloak)
         {
             _keycloak = keycloak;
         }
 
-        [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateUser(string id, UpdateUserRequest request)
+        [HttpPut]
+        public async Task<IActionResult> UpdateUser(UpdateUserRequest request)
         {
-            await _keycloak.UpdateUser(id, request);
+            var userId = User.FindFirst("sub")?.Value;
+            await _keycloak.UpdateUser(userId!, request);
             return Ok();
         }
     }

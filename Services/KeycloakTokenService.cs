@@ -24,8 +24,7 @@ namespace LogLog.Service.Services
 
             var res = await _http.PostAsync(
                 _configuration["Keycloak:TokenEndpoint"],
-                new FormUrlEncodedContent(form)
-            );
+                new FormUrlEncodedContent(form));
 
             var json = await res.Content.ReadAsStringAsync();
 

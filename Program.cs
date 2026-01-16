@@ -80,6 +80,10 @@ builder.Services.AddSingleton<MongoDbService>();
 
 builder.Services.AddHttpClient();
 
+// Register Keycloak services
+builder.Services.AddScoped<KeycloakTokenService>();
+builder.Services.AddScoped<KeycloakUserService>();
+
 var hubPattern = builder.Configuration.GetValue<string>("HubPattern");
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)

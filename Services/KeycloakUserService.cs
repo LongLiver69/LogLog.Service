@@ -28,13 +28,13 @@ namespace LogLog.Service.Services
 
             var payload = JsonSerializer.Serialize(request, new JsonSerializerOptions
             {
+                PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
                 DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
             });
 
             var res = await _http.PutAsync(
                 $"{_configuration["Keycloak:AdminApiBaseUrl"]}/users/{userId}",
-                new StringContent(payload, Encoding.UTF8, "application/json")
-            );
+                new StringContent(payload, Encoding.UTF8, "application/json"));
 
             if (!res.IsSuccessStatusCode)
             {
