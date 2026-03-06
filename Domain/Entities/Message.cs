@@ -9,11 +9,9 @@ namespace LogLog.Service.Domain.Entities
         [BsonRepresentation(BsonType.ObjectId)]
         public string? Id { get; set; }
 
-        [BsonRepresentation(BsonType.ObjectId)]
         [BsonElement("sender_id")]
         public string SenderId { get; set; } = null!;
 
-        [BsonRepresentation(BsonType.ObjectId)]
         [BsonElement("receiver_id")]
         public string ReceiverId { get; set; } = null!;
 

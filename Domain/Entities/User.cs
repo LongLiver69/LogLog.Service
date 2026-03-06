@@ -3,17 +3,25 @@ using MongoDB.Bson;
 
 namespace LogLog.Service.Domain.Entities
 {
-    public class Avatar
+    public class User
     {
         [BsonId]
-        [BsonRepresentation(BsonType.ObjectId)]
         public string? Id { get; set; }
+
+        [BsonElement("username")]
+        public string Username { get; set; } = null!;
+
+        [BsonElement("first_name")]
+        public string FirstName { get; set; } = null!;
+
+        [BsonElement("last_name")]
+        public string LastName { get; set; } = null!;
+
+        [BsonElement("email")]
+        public string Email { get; set; } = null!;
 
         [BsonElement("avatar_name")]
         public string AvatarName { get; set; } = null!;
-
-        [BsonElement("user_id")]
-        public string UserId { get; set; } = null!;
 
         [BsonElement("position_ratio_x")]
         public float PositionRatioX { get; set; }

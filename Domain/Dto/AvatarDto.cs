@@ -2,8 +2,6 @@
 {
     public class AvatarDto
     {
-        public string? Id { get; set; }
-
         public string AvatarName { get; set; } = null!;
 
         public string AvatarUrl { get; set; } = null!;

@@ -19,7 +19,7 @@ namespace LogLog.Service.Services
             _configuration = configuration;
         }
 
-        public async Task UpdateUser(string userId, UpdateUserRequest request)
+        public async Task<bool> UpdateUser(string userId, UpdateUserRequest request)
         {
             var token = await _tokenService.GetAdminToken();
 
@@ -41,6 +41,8 @@ namespace LogLog.Service.Services
                 var err = await res.Content.ReadAsStringAsync();
                 throw new Exception($"Keycloak error: {err}");
             }
+
+            return res.IsSuccessStatusCode;
         }
     }
 

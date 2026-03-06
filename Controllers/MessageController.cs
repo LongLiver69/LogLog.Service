@@ -30,5 +30,13 @@ namespace LogLog.Service.Controllers
             await _db.Messages.InsertOneAsync(message);
             return Ok(message);
         }
+
+        //[HttpGet("contacted-users")]
+        //public async Task<IActionResult> GetAllContactedUsers()
+        //{
+        //    var userId = User.FindFirst("sub")?.Value;
+        //    var messages = await _db.Messages.Find(m => m.SenderId == userId).ToListAsync();
+        //    return Ok(messages);
+        //}
     }
 }

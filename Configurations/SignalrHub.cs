@@ -25,7 +25,22 @@ namespace LogLog.Service.Configurations
             var givenName = user?.FindFirst("given_name")?.Value;
             var familyName = user?.FindFirst("family_name")?.Value;
             var fullname = user?.FindFirst("name")?.Value ?? $"{givenName} {familyName}".Trim();
-            var avatarUrl = user?.FindFirst("avatar_url")?.Value;
+            //var avatarUrl = user?.FindFirst("avatar_url")?.Value;
+
+            var existUser = await _db.Users.Find(_ => _.Id == userId).FirstOrDefaultAsync();
+
+            if (existUser == null) {
+                var newUser = new User
+                {
+                    Id = userId!,
+                    Username = username!,
+                    FirstName = givenName!,
+                    LastName = familyName!,
+                    Email = email!,
+                    CreatedAt = DateTime.UtcNow
+                };
+                await _db.Users.InsertOneAsync(newUser);
+            }
 
             if (!string.IsNullOrEmpty(userId))
             {

@@ -15,8 +15,8 @@ namespace LogLog.Service.Configurations
             _database = client.GetDatabase(settings.Value.DatabaseName);
         }
 
+        public IMongoCollection<User> Users => _database.GetCollection<User>("users");
         public IMongoCollection<Connection> Connections => _database.GetCollection<Connection>("connections");
         public IMongoCollection<Message> Messages => _database.GetCollection<Message>("messages");
-        public IMongoCollection<Avatar> Avatars => _database.GetCollection<Avatar>("avatars");
     }
 }

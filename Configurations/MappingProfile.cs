@@ -7,7 +7,7 @@ namespace LogLog.Service.Configurations
     {
         public MappingProfile()
         {
-            CreateMap<Avatar, AvatarDto>();
+            CreateMap<User, AvatarDto>();
         }
     }
 }
